@@ -209,6 +209,37 @@ def add_background(image_file):
         .result-box div {{
             color: #0B2E4A !important;
         }}
+        /* Botones de descarga y botones generales */
+.stDownloadButton button,
+.stButton button {
+    background-color: rgba(255,255,255,0.92) !important;
+    color: #0B2E4A !important;
+    border: 1px solid rgba(11,46,74,0.25) !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+}
+
+.stDownloadButton button p,
+.stDownloadButton button span,
+.stButton button p,
+.stButton button span {
+    color: #0B2E4A !important;
+}
+
+.stDownloadButton button:hover,
+.stButton button:hover {
+    background-color: #F05A28 !important;
+    color: #ffffff !important;
+}
+
+.stDownloadButton button:hover p,
+.stDownloadButton button:hover span,
+.stButton button:hover p,
+.stButton button:hover span {
+    color: #ffffff !important;
+}
+
+</style>
         </style>
         """,
         unsafe_allow_html=True
