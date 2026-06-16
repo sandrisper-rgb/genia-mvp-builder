@@ -1,45 +1,13 @@
+# GeniA Innovation Builder
 
-# GeniA MVP Builder
+App Streamlit para construir un MVP de IA en salud.
 
-Aplicación Streamlit para guiar grupos del BootCamp en la construcción de un Producto Mínimo Viable (MVP) de IA en salud.
+Archivos:
+- app.py
+- requirements.txt
+- fondo_bootcamp.png
 
-## Instalación local
-
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-## Uso en clase
-
-1. Cada grupo entra a la app.
-2. Completa las secciones 1 a 8.
-3. Revisa la puntuación de madurez.
-4. Descarga el MVP Canvas en PDF.
-5. Presenta pitch de 3 minutos.
-
-## Despliegue en Streamlit Community Cloud
-
-1. Crear repositorio en GitHub.
-2. Subir `app.py` y `requirements.txt`.
-3. Entrar a https://share.streamlit.io/
-4. Crear nueva app apuntando a `app.py`.
-
-## Entregable final
-
-- Resumen ejecutivo
-- MVP Canvas
-- Plan piloto
-- KPIs
-- Riesgos
-- Ruta de escalamiento
-
-
-## Fondo visual
-
-La app usa `fondo_bootcamp.png` como imagen de fondo. Si quieres cambiarlo, reemplaza ese archivo por otra imagen con el mismo nombre.
-
-
-## Nueva función
-
-La app genera automáticamente un borrador de pitch de 3 minutos y un pitch de una diapositiva a partir de las respuestas del grupo.
+En Streamlit Cloud usar:
+- Repository: sandrisper-rgb/genia-mvp-builder
+- Branch: main
+- Main file path: app.py
