@@ -29,11 +29,18 @@ def add_bg_from_local(image_file):
         background-position: center;
         background-attachment: fixed;
     }}
-    .block-container {{
-        background: rgba(255,255,255,0.58);
-        border-radius: 26px;
-        padding: 2rem 2.2rem 3rem 2.2rem;
-        box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+    .block-container {
+    background: linear-gradient(
+        135deg,
+        rgba(6, 42, 72, 0.86),
+        rgba(14, 98, 130, 0.78),
+        rgba(240, 90, 40, 0.34)
+    );
+    border-radius: 28px;
+    padding: 2rem 2.2rem 3rem 2.2rem;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.25);
+}
     }}
     [data-testid="stSidebar"] {{ background: rgba(255,255,255,0.94); }}
     h1, h2, h3 {{ color: #0B2E4A; }}
