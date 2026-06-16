@@ -39,7 +39,7 @@ def add_background(image_file):
         <style>
         .stApp {{
             background-image:
-                linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.30)),
+                linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.16)),
                 url("data:image/png;base64,{encoded}");
             background-size: cover;
             background-position: center;
@@ -49,9 +49,9 @@ def add_background(image_file):
         .block-container {{
             background: linear-gradient(
                 135deg,
-                rgba(6, 42, 72, 0.88),
-                rgba(14, 98, 130, 0.78),
-                rgba(240, 90, 40, 0.36)
+                rgba(6, 42, 72, 0.58),
+                rgba(14, 98, 130, 0.48),
+                rgba(240, 90, 40, 0.22)
             );
             border-radius: 28px;
             padding: 2rem 2.2rem 3rem 2.2rem;
@@ -71,9 +71,10 @@ def add_background(image_file):
             border-radius: 26px;
             background: linear-gradient(
                 135deg,
-                rgba(255,255,255,0.94),
-                rgba(232,246,250,0.88)
+                rgba(255,255,255,0.58),
+                rgba(232,246,250,0.42)
             );
+            backdrop-filter: blur(7px);
             border: 1px solid rgba(11,46,74,0.18);
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             margin-bottom: 18px;
@@ -127,12 +128,19 @@ def add_background(image_file):
         }}
 
         input, textarea {{
-            background-color: rgba(255,255,255,0.94) !important;
+            background-color: rgba(255,255,255,0.68) !important;
             color: #0B2E4A !important;
         }}
 
+        div[data-baseweb="select"] > div {{
+            background-color: rgba(255,255,255,0.68) !important;
+            color: #0B2E4A !important;
+            border: 1px solid rgba(255,255,255,0.45) !important;
+            backdrop-filter: blur(4px);
+        }}
+
         [data-testid="stExpander"] {{
-            background: rgba(255,255,255,0.90);
+            background: rgba(255,255,255,0.56);
             border-radius: 14px;
             border: 1px solid rgba(255,255,255,0.45);
         }}
@@ -150,7 +158,7 @@ def add_background(image_file):
 
         .stTabs [aria-selected="true"] {{
             color: #F05A28 !important;
-            background: rgba(255,255,255,0.88);
+            background: rgba(255,255,255,0.62);
             border-radius: 10px 10px 0 0;
         }}
 
@@ -167,7 +175,7 @@ def add_background(image_file):
             padding: 20px 22px;
             border-radius: 22px;
             border: 2px solid rgba(0,0,0,0.08);
-            background: rgba(255,255,255,0.88);
+            background: rgba(255,255,255,0.62);
             box-shadow: 0 4px 14px rgba(0,0,0,0.08);
             margin: 12px 0 18px 0;
         }}
@@ -185,7 +193,7 @@ def add_background(image_file):
         }}
 
         .result-box {{
-            background: rgba(255,255,255,0.88);
+            background: rgba(255,255,255,0.62);
             border-radius: 18px;
             padding: 18px;
             border: 1px solid rgba(255,255,255,0.55);
