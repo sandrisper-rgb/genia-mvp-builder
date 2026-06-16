@@ -23,14 +23,14 @@ def add_bg_from_local(image_file):
     <style>
     .stApp {{
         background-image:
-            linear-gradient(rgba(255,255,255,0.58), rgba(255,255,255,0.72)),
+            linear-gradient(rgba(255,255,255,0.25), rgba(255,255,255,0.38)),
             url("data:image/png;base64,{encoded}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
     }}
     .block-container {{
-        background: rgba(255,255,255,0.72);
+        background: rgba(255,255,255,0.58);
         border-radius: 26px;
         padding: 2rem 2.2rem 3rem 2.2rem;
         box-shadow: 0 8px 28px rgba(0,0,0,0.08);
