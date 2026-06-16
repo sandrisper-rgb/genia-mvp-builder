@@ -1,13 +1,18 @@
 # GeniA Innovation Builder
 
-App Streamlit para construir un MVP de IA en salud.
+Aplicación Streamlit para construir un MVP de IA en salud.
 
-Archivos:
+## Archivos necesarios
+
 - app.py
 - requirements.txt
 - fondo_bootcamp.png
+- logo_genia.png
 
-En Streamlit Cloud usar:
-- Repository: sandrisper-rgb/genia-mvp-builder
-- Branch: main
-- Main file path: app.py
+## Deploy
+
+En Streamlit Community Cloud:
+
+```text
+Main file path: app.py
+```
