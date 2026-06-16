@@ -33,3 +33,13 @@ streamlit run app.py
 - KPIs
 - Riesgos
 - Ruta de escalamiento
+
+
+## Fondo visual
+
+La app usa `fondo_bootcamp.png` como imagen de fondo. Si quieres cambiarlo, reemplaza ese archivo por otra imagen con el mismo nombre.
+
+
+## Nueva función
+
+La app genera automáticamente un borrador de pitch de 3 minutos y un pitch de una diapositiva a partir de las respuestas del grupo.

@@ -4,6 +4,42 @@ from datetime import datetime
 from io import BytesIO
 import pandas as pd
 
+import base64
+
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as image:
+        encoded = base64.b64encode(image.read()).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image:
+                linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.92)),
+                url("data:image/png;base64,{encoded}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }}
+
+        .block-container {{
+            background: rgba(255,255,255,0.82);
+            border-radius: 24px;
+            padding: 2rem 2rem 3rem 2rem;
+        }}
+
+        [data-testid="stSidebar"] {{
+            background: rgba(255,255,255,0.94);
+        }}
+
+        h1, h2, h3 {{
+            color: #0B2E4A;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+
 try:
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -18,6 +54,8 @@ st.set_page_config(
     page_icon="🧠",
     layout="wide"
 )
+
+add_bg_from_local("fondo_bootcamp.png")
 
 st.markdown("""
 <style>
@@ -249,6 +287,54 @@ Casos: {d.get('casos','')}
 {', '.join(d.get('pi', []))}
 """
 
+
+def build_pitch(d):
+    nombre = d.get("nombre","Nuestro MVP")
+    problema = d.get("problema","un problema clínico relevante")
+    usuario = d.get("usuario","el usuario clínico")
+    funcion = d.get("funcion","una función mínima de apoyo")
+    datos = ", ".join(d.get("datos", [])) or "datos clínicos disponibles"
+    kpis = ", ".join(d.get("kpis", [])) or "indicadores de impacto clínico"
+    riesgo = d.get("riesgo","riesgo clínico")
+    mitigacion = d.get("mitigacion","supervisión médica y monitoreo")
+    lugar = d.get("lugar","un servicio clínico")
+    duracion = d.get("duracion","4 semanas")
+    escala = d.get("escala","escalamiento progresivo a otros servicios")
+
+    return f"""
+# Borrador de pitch de 3 minutos
+
+## 1. Apertura
+Buenos días. Somos el equipo **{nombre}** y estamos desarrollando un MVP de inteligencia artificial en salud orientado a resolver un problema concreto: **{problema}**.
+
+## 2. Problema clínico
+Hoy, este problema impacta el flujo clínico porque genera retrasos, carga operativa o riesgo de omisiones. Nuestro usuario principal es **{usuario}**, quien necesita una herramienta sencilla que apoye su trabajo sin reemplazar su criterio profesional.
+
+## 3. Solución MVP
+Nuestro Producto Mínimo Viable hará una sola cosa: **{funcion}**.  
+Este MVP no pretende ser una plataforma completa ni una IA autónoma. Es una solución mínima, segura y medible para probar valor clínico en condiciones reales.
+
+## 4. Datos e IA
+La solución utilizará principalmente: **{datos}**.  
+La salida esperada será una alerta, resumen, priorización o clasificación supervisada, siempre como apoyo a la decisión clínica.
+
+## 5. Impacto esperado
+Mediremos el éxito del MVP usando estos indicadores: **{kpis}**.  
+El objetivo es demostrar que la herramienta mejora el flujo clínico, reduce tiempos o aumenta la seguridad sin introducir riesgos no controlados.
+
+## 6. Riesgo y mitigación
+El principal riesgo identificado es **{riesgo}**. Para controlarlo, proponemos: **{mitigacion}**.  
+La decisión final siempre permanecerá en manos del profesional de salud.
+
+## 7. Piloto y escalamiento
+Proponemos iniciar un piloto en **{lugar}** durante **{duracion}**.  
+Si demuestra valor y seguridad, la ruta de escalamiento será: **{escala}**.
+
+## 8. Cierre
+Nuestro MVP no busca construir la solución más grande, sino la más clara, segura y medible para generar impacto real en salud.
+"""
+
+
 def make_pdf(d):
     if not REPORTLAB_AVAILABLE:
         return None
@@ -316,6 +402,44 @@ with tabs[8]:
         mime="text/markdown"
     )
 
+    st.subheader("🎤 Borrador automático del pitch")
+    pitch = build_pitch(d)
+    st.markdown(pitch)
+
+    st.download_button(
+        "🎤 Descargar pitch en Markdown",
+        data=pitch.encode("utf-8"),
+        file_name=f"pitch_{d.get('nombre','proyecto').replace(' ','_')}.md",
+        mime="text/markdown"
+    )
+
+    one_slide = f"""# Pitch en una diapositiva
+
+**Nombre del MVP:** {d.get('nombre','')}
+
+**Problema clínico:** {d.get('problema','')}
+
+**Usuario:** {d.get('usuario','')}
+
+**Función mínima:** {d.get('funcion','')}
+
+**Datos:** {', '.join(d.get('datos', []))}
+
+**KPIs:** {', '.join(d.get('kpis', []))}
+
+**Riesgo y mitigación:** {d.get('riesgo','')} → {d.get('mitigacion','')}
+
+**Piloto:** {d.get('lugar','')} durante {d.get('duracion','')}
+
+**Escalamiento:** {d.get('escala','')}
+"""
+    st.download_button(
+        "🖼️ Descargar pitch de 1 diapositiva",
+        data=one_slide.encode("utf-8"),
+        file_name=f"pitch_1_slide_{d.get('nombre','proyecto').replace(' ','_')}.md",
+        mime="text/markdown"
+    )
+
     pdf = make_pdf(d)
     if pdf:
         st.download_button(
@@ -336,13 +460,9 @@ st.sidebar.markdown("""
 4. Descarga el Canvas.
 5. Presenta pitch de 3 minutos.
 
-**Pitch final**
-- Problema
-- Usuario
-- MVP
-- Datos
-- KPIs
-- Riesgo
-- Piloto
-- Escalamiento
+**Pitch final automático**
+La app genera:
+- Borrador de pitch de 3 minutos
+- Pitch en una diapositiva
+- MVP Canvas en PDF
 """)
