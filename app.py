@@ -1,8 +1,11 @@
-import streamlit as st
+from pathlib import Path
+
+code = r'''import streamlit as st
 from datetime import datetime
 from io import BytesIO
 import base64
 import os
+import re
 
 try:
     from reportlab.lib.pagesizes import letter
@@ -12,6 +15,13 @@ try:
     REPORTLAB_AVAILABLE = True
 except Exception:
     REPORTLAB_AVAILABLE = False
+
+try:
+    from docx import Document
+    from docx.shared import Pt
+    DOCX_AVAILABLE = True
+except Exception:
+    DOCX_AVAILABLE = False
 
 
 # =========================
@@ -209,6 +219,7 @@ def add_background(image_file):
         .result-box div {{
             color: #0B2E4A !important;
         }}
+
         /* Botones de descarga y botones generales */
         .stDownloadButton button,
         .stButton button {{
@@ -238,7 +249,7 @@ def add_background(image_file):
         .stButton button:hover span {{
             color: #ffffff !important;
         }}
-</style>
+        </style>
         """,
         unsafe_allow_html=True
     )
@@ -291,6 +302,7 @@ st.divider()
 if "data" not in st.session_state:
     st.session_state.data = {}
 
+
 def save(key, value):
     st.session_state.data[key] = value
 
@@ -315,7 +327,10 @@ with tabs[0]:
     col1, col2 = st.columns(2)
 
     with col1:
-        nombre = st.text_input("Nombre del proyecto / equipo", value=st.session_state.data.get("nombre", ""))
+        nombre = st.text_input(
+            "Nombre del proyecto / equipo",
+            value=st.session_state.data.get("nombre", "")
+        )
         area = st.selectbox("Área clínica principal", [
             "Urgencias", "Radiología", "Patología", "Oncología", "Consulta externa",
             "Hospitalización", "Laboratorio clínico", "Gestión administrativa", "Otra"
@@ -394,7 +409,11 @@ with tabs[2]:
 with tabs[3]:
     st.header("4. Definir el MVP")
     st.info("Regla: eliminen el 80% de las funcionalidades. El MVP debe hacer una sola cosa muy bien.")
-    funcion = st.text_area("Función mínima del MVP", placeholder="Mi MVP hará solamente...", height=100)
+    funcion = st.text_area(
+        "Función mínima del MVP",
+        placeholder="Mi MVP hará solamente...",
+        height=100
+    )
     no_hara = st.text_area(
         "¿Qué NO hará el MVP?",
         placeholder="Ejemplo: no diagnosticará, no formulará tratamiento, no reemplazará criterio médico.",
@@ -438,12 +457,16 @@ with tabs[4]:
 
 with tabs[5]:
     st.header("6. KPIs: ¿cómo sabremos que funciona?")
-    kpis = st.multiselect("Seleccionen máximo 3 KPIs principales", [
-        "Tiempo ahorrado", "Concordancia con experto", "Sensibilidad",
-        "Especificidad", "Tasa de falsos negativos", "Satisfacción del usuario",
-        "Casos priorizados correctamente", "Reducción de errores",
-        "Costo por caso", "Adherencia al uso"
-    ], max_selections=3)
+    kpis = st.multiselect(
+        "Seleccionen máximo 3 KPIs principales",
+        [
+            "Tiempo ahorrado", "Concordancia con experto", "Sensibilidad",
+            "Especificidad", "Tasa de falsos negativos", "Satisfacción del usuario",
+            "Casos priorizados correctamente", "Reducción de errores",
+            "Costo por caso", "Adherencia al uso"
+        ],
+        max_selections=3
+    )
     meta = st.text_area(
         "Meta del piloto",
         placeholder="Ejemplo: reducir 20% el tiempo de revisión sin aumentar falsos negativos.",
@@ -467,8 +490,18 @@ with tabs[6]:
     duracion = st.selectbox("Duración del piloto", [
         "1 semana", "2 semanas", "4 semanas", "8 semanas", "12 semanas"
     ])
-    usuarios = st.number_input("Número estimado de usuarios participantes", min_value=1, max_value=1000, value=5)
-    casos = st.number_input("Número estimado de casos a evaluar", min_value=1, max_value=100000, value=50)
+    usuarios = st.number_input(
+        "Número estimado de usuarios participantes",
+        min_value=1,
+        max_value=1000,
+        value=5
+    )
+    casos = st.number_input(
+        "Número estimado de casos a evaluar",
+        min_value=1,
+        max_value=100000,
+        value=50
+    )
     criterio_stop = st.text_area(
         "Criterio de detención",
         placeholder="Ejemplo: si aumenta el tiempo, si hay evento adverso o si falla la supervisión.",
@@ -559,11 +592,24 @@ def maturity_level(score):
 
 
 def innovation_score(d):
-    impacto = (4 if d.get("problema") else 0) + (3 if d.get("valor") else 0) + (3 if d.get("kpis") else 0)
-    factibilidad = (4 if d.get("funcion") else 0) + (3 if d.get("no_hara") else 0) + (3 if d.get("lugar") else 0)
+    impacto = (
+        (4 if d.get("problema") else 0)
+        + (3 if d.get("valor") else 0)
+        + (3 if d.get("kpis") else 0)
+    )
+    factibilidad = (
+        (4 if d.get("funcion") else 0)
+        + (3 if d.get("no_hara") else 0)
+        + (3 if d.get("lugar") else 0)
+    )
     datos_score = int(d.get("calidad", 0)) * 2
-    escalabilidad = (5 if d.get("escala") else 0) + (3 if d.get("aliados") else 0) + (2 if d.get("pi") else 0)
+    escalabilidad = (
+        (5 if d.get("escala") else 0)
+        + (3 if d.get("aliados") else 0)
+        + (2 if d.get("pi") else 0)
+    )
     riesgo_score = int(d.get("seguridad", 0)) * 2
+
     return {
         "Impacto clínico": min(impacto, 10),
         "Factibilidad": min(factibilidad, 10),
@@ -671,6 +717,62 @@ Nuestro MVP no busca construir la solución más grande, sino la más clara, seg
 """
 
 
+def add_markdown_runs(paragraph, text):
+    """Agrega texto a Word interpretando **negrita** básica."""
+    parts = re.split(r"(\*\*.*?\*\*)", text)
+
+    for part in parts:
+        if not part:
+            continue
+
+        if part.startswith("**") and part.endswith("**"):
+            run = paragraph.add_run(part[2:-2])
+            run.bold = True
+        else:
+            paragraph.add_run(part.replace("  ", ""))
+
+
+def make_word(markdown_text):
+    """Convierte el resumen en Markdown básico a un documento Word."""
+    if not DOCX_AVAILABLE:
+        return None
+
+    document = Document()
+
+    normal_style = document.styles["Normal"]
+    normal_style.font.name = "Aptos"
+    normal_style.font.size = Pt(11)
+
+    for raw_line in markdown_text.strip().splitlines():
+        line = raw_line.strip()
+
+        if not line:
+            document.add_paragraph()
+            continue
+
+        if line.startswith("### "):
+            document.add_heading(line[4:].strip(), level=3)
+        elif line.startswith("## "):
+            document.add_heading(line[3:].strip(), level=2)
+        elif line.startswith("# "):
+            document.add_heading(line[2:].strip(), level=1)
+        elif line.startswith("- ") or line.startswith("* "):
+            paragraph = document.add_paragraph(style="List Bullet")
+            add_markdown_runs(paragraph, line[2:].strip())
+        elif re.match(r"^\d+\.\s+", line):
+            clean_line = re.sub(r"^\d+\.\s+", "", line)
+            paragraph = document.add_paragraph(style="List Number")
+            add_markdown_runs(paragraph, clean_line)
+        else:
+            paragraph = document.add_paragraph()
+            add_markdown_runs(paragraph, line)
+
+    buffer = BytesIO()
+    document.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 def make_pdf(d):
     if not REPORTLAB_AVAILABLE:
         return None
@@ -702,7 +804,11 @@ def make_pdf(d):
         ["Riesgo", d.get("riesgo", "")],
         ["Mitigación", d.get("mitigacion", "")],
         ["KPIs", ", ".join(d.get("kpis", []))],
-        ["Piloto", f"{d.get('lugar','')} | {d.get('duracion','')} | {d.get('casos','')} casos"],
+        [
+            "Piloto",
+            f"{d.get('lugar','')} | {d.get('duracion','')} | "
+            f"{d.get('casos','')} casos"
+        ],
         ["Escalamiento", d.get("escala", "")],
         ["PI potencial", ", ".join(d.get("pi", []))]
     ]
@@ -723,9 +829,10 @@ def make_pdf(d):
         f"Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
         styles["Normal"]
     ))
+
     doc.build(story)
     buffer.seek(0)
-    return buffer
+    return buffer.getvalue()
 
 
 # =========================
@@ -759,8 +866,10 @@ with tabs[8]:
     total_innovation = sum(scores.values())
 
     c1, c2 = st.columns([1, 2])
+
     with c1:
         st.metric("Puntaje global", f"{total_innovation}/50")
+
         if total_innovation < 20:
             st.warning("Potencial inicial. Requiere mayor definición.")
         elif total_innovation < 35:
@@ -775,28 +884,49 @@ with tabs[8]:
     summary = build_summary(d)
 
     st.subheader("📄 Resumen del MVP")
+
     with st.container():
-        st.markdown(f'<div class="result-box">{summary}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="result-box">{summary}</div>',
+            unsafe_allow_html=True
+        )
 
-    archivo_word = generar_word(resumen_md)
+    archivo_word = make_word(summary)
 
-st.download_button(
-    label="📄 Descargar resumen en Word",
-    data=archivo_word,
-    file_name="resumen_proyecto.docx",
-    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
+    if archivo_word:
+        st.download_button(
+            label="📄 Descargar resumen en Word",
+            data=archivo_word,
+            file_name=(
+                f"genia_mvp_"
+                f"{d.get('nombre', 'proyecto').replace(' ', '_')}.docx"
+            ),
+            mime=(
+                "application/vnd.openxmlformats-officedocument."
+                "wordprocessingml.document"
+            )
+        )
+    else:
+        st.caption(
+            "Para exportar Word agrega `python-docx` al archivo requirements.txt."
+        )
 
     st.subheader("🎤 Borrador automático del pitch")
 
     pitch = build_pitch(d)
+
     with st.container():
-        st.markdown(f'<div class="result-box">{pitch}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="result-box">{pitch}</div>',
+            unsafe_allow_html=True
+        )
 
     st.download_button(
         "🎤 Descargar pitch en Markdown",
         data=pitch.encode("utf-8"),
-        file_name=f"pitch_{d.get('nombre','proyecto').replace(' ','_')}.md",
+        file_name=(
+            f"pitch_{d.get('nombre', 'proyecto').replace(' ', '_')}.md"
+        ),
         mime="text/markdown"
     )
 
@@ -828,7 +958,10 @@ st.download_button(
     st.download_button(
         "🖼️ Descargar pitch de 1 diapositiva",
         data=one_slide.encode("utf-8"),
-        file_name=f"pitch_1_slide_{d.get('nombre','proyecto').replace(' ','_')}.md",
+        file_name=(
+            f"pitch_1_slide_"
+            f"{d.get('nombre', 'proyecto').replace(' ', '_')}.md"
+        ),
         mime="text/markdown"
     )
 
@@ -838,11 +971,16 @@ st.download_button(
         st.download_button(
             "📄 Descargar MVP Canvas en PDF",
             data=pdf,
-            file_name=f"genia_mvp_canvas_{d.get('nombre','proyecto').replace(' ','_')}.pdf",
+            file_name=(
+                f"genia_mvp_canvas_"
+                f"{d.get('nombre', 'proyecto').replace(' ', '_')}.pdf"
+            ),
             mime="application/pdf"
         )
     else:
-        st.caption("Para exportar PDF instala reportlab: pip install reportlab")
+        st.caption(
+            "Para exportar PDF agrega `reportlab` al archivo requirements.txt."
+        )
 
 
 # =========================
@@ -863,7 +1001,24 @@ st.sidebar.markdown("""
 
 - Nivel de madurez
 - Potencial de innovación
+- Resumen del MVP en Word
 - Borrador de pitch de 3 minutos
 - Pitch en una diapositiva
 - MVP Canvas en PDF
 """)
+'''
+
+path = Path("/mnt/data/app_genia_word.py")
+path.write_text(code, encoding="utf-8")
+
+requirements = """streamlit
+reportlab
+python-docx
+"""
+req_path = Path("/mnt/data/requirements.txt")
+req_path.write_text(requirements, encoding="utf-8")
+
+print(f"Archivo creado: {path}")
+print(f"Requirements creado: {req_path}")
+
+          
