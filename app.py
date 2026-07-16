@@ -778,12 +778,14 @@ with tabs[8]:
     with st.container():
         st.markdown(f'<div class="result-box">{summary}</div>', unsafe_allow_html=True)
 
-    st.download_button(
-        "📥 Descargar resumen en Markdown",
-        data=summary.encode("utf-8"),
-        file_name=f"genia_mvp_{d.get('nombre','proyecto').replace(' ','_')}.md",
-        mime="text/markdown"
-    )
+    archivo_word = generar_word(resumen_md)
+
+st.download_button(
+    label="📄 Descargar resumen en Word",
+    data=archivo_word,
+    file_name="resumen_proyecto.docx",
+    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
 
     st.subheader("🎤 Borrador automático del pitch")
 
