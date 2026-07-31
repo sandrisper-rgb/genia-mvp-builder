@@ -635,13 +635,41 @@ with tabs[9]:
     else:
         st.caption("Para exportar PowerPoint instala python-pptx.")
 
+    st.subheader("Gráfica de indicadores")
     chart_file = make_scores_chart(scores)
     if chart_file:
-        st.download_button("📈 Descargar figura de innovación (.png)", chart_file, file_name=f"innovacion_{filename}.png", mime="image/png")
+        chart_bytes = chart_file.getvalue()
+        st.image(
+            chart_bytes,
+            caption="Vista previa de los indicadores del proyecto",
+            use_container_width=True
+        )
+        st.download_button(
+            "📈 Descargar gráfica de indicadores (.png)",
+            chart_bytes,
+            file_name=f"indicadores_{filename}.png",
+            mime="image/png"
+        )
+    else:
+        st.caption("Para mostrar y exportar la gráfica instala matplotlib.")
 
+    st.subheader("Canvas visual del MVP")
     canvas_file = make_canvas_png(d, score, level, innovation, blockers)
     if canvas_file:
-        st.download_button("🖼️ Descargar Canvas visual (.png)", canvas_file, file_name=f"canvas_mvp_{filename}.png", mime="image/png")
+        canvas_bytes = canvas_file.getvalue()
+        st.image(
+            canvas_bytes,
+            caption="Vista previa del Canvas del MVP",
+            use_container_width=True
+        )
+        st.download_button(
+            "🖼️ Descargar Canvas visual (.png)",
+            canvas_bytes,
+            file_name=f"canvas_mvp_{filename}.png",
+            mime="image/png"
+        )
+    else:
+        st.caption("Para mostrar y exportar el Canvas visual instala pillow.")
 
     pdf=make_pdf(d,summary)
     if pdf: st.download_button("📄 Descargar Canvas en PDF",pdf,file_name=f"genia_mvp_canvas_{filename}.pdf",mime="application/pdf")
