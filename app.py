@@ -540,40 +540,145 @@ def make_scores_chart(scores):
     return output
 
 
+
+def get_font(size=24, bold=False):
+    possible_fonts = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf" if bold else "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "arialbd.ttf" if bold else "arial.ttf",
+    ]
+    for font_path in possible_fonts:
+        try:
+            return ImageFont.truetype(font_path, size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
+
 def make_canvas_png(d, score, level, innovation, blockers):
     if not PIL_AVAILABLE:
         return None
-    W,H=1600,1100
-    img=Image.new("RGB",(W,H),(11,46,74)); draw=ImageDraw.Draw(img)
-    try:
-        title=ImageFont.truetype("DejaVuSans-Bold.ttf",40)
-        section=ImageFont.truetype("DejaVuSans-Bold.ttf",25)
-        body=ImageFont.truetype("DejaVuSans.ttf",18)
-    except Exception:
-        title=section=body=ImageFont.load_default()
-    draw.text((50,30),"GeniA Innovation Builder — MVP Canvas",font=title,fill=(255,255,255))
-    boxes=[
-        ("Problema",d.get("problema","")),
-        ("Usuario y decisión",f"{d.get('usuario','')}\n{d.get('decision','')}"),
-        ("Variable objetivo",d.get("variable_objetivo","")),
-        ("Datos y línea base",f"{', '.join(d.get('datos',[]))}\nLínea base: {d.get('linea_base','')}"),
-        ("MVP",f"{d.get('funcion','')}\nSalida: {d.get('salida_visible','')}"),
-        ("Riesgo y mitigación",f"{d.get('riesgo','')}\n{d.get('mitigacion','')}"),
-        ("KPIs y meta",f"{', '.join(d.get('kpis',[]))}\n{d.get('meta','')}"),
-        ("Piloto y escalamiento",f"{d.get('lugar','')} | {d.get('duracion','')} | {d.get('casos','')} casos\n{d.get('escala','')}"),
+
+    width, height = 1800, 1250
+    image = Image.new("RGB", (width, height), (11, 46, 74))
+    draw = ImageDraw.Draw(image)
+
+    title_font = get_font(44, bold=True)
+    subtitle_font = get_font(28, bold=True)
+    section_font = get_font(26, bold=True)
+    text_font = get_font(24, bold=False)
+    footer_font = get_font(22, bold=True)
+
+    white = (255, 255, 255)
+    orange = (240, 90, 40)
+    dark_text = (8, 30, 48)
+    light_box = (250, 250, 250)
+
+    draw.text((55, 28), "GeniA Innovation Builder - MVP Canvas", fill=white, font=title_font)
+    draw.text(
+        (55, 82),
+        f"Proyecto: {d.get('nombre', '') or 'Sin nombre'}",
+        fill=orange,
+        font=subtitle_font
+    )
+
+    def clean_value(value, fallback="Por definir"):
+        if value is None:
+            return fallback
+        text = str(value).strip()
+        return text if text else fallback
+
+    def wrap_text(value, width_chars=48):
+        lines = []
+        for paragraph in str(value).split("\n"):
+            wrapped = textwrap.wrap(paragraph, width=width_chars) if paragraph.strip() else [""]
+            lines.extend(wrapped)
+        return lines
+
+    boxes = [
+        ("Problema", clean_value(d.get("problema"))),
+        (
+            "Usuario y decisión",
+            f"{clean_value(d.get('usuario'))}\n{clean_value(d.get('decision'))}"
+        ),
+        ("Variable objetivo", clean_value(d.get("variable_objetivo"))),
+        (
+            "Datos y línea base",
+            f"{clean_value(', '.join(d.get('datos', [])), 'Sin datos definidos')}\n"
+            f"Línea base: {clean_value(d.get('linea_base'))}"
+        ),
+        (
+            "MVP",
+            f"{clean_value(d.get('funcion'))}\n"
+            f"Salida: {clean_value(d.get('salida_visible'))}"
+        ),
+        (
+            "Riesgo y mitigación",
+            f"{clean_value(d.get('riesgo'))}\n{clean_value(d.get('mitigacion'))}"
+        ),
+        (
+            "KPIs y meta",
+            f"{clean_value(', '.join(d.get('kpis', [])), 'Sin KPIs definidos')}\n"
+            f"Meta: {clean_value(d.get('meta'))}"
+        ),
+        (
+            "Piloto y escalamiento",
+            f"{clean_value(d.get('lugar'))} | {clean_value(d.get('duracion'))} | "
+            f"{clean_value(d.get('casos'))} casos\n{clean_value(d.get('escala'))}"
+        ),
     ]
-    coords=[(50,120,760,320),(840,120,1550,320),(50,350,760,550),(840,350,1550,550),(50,580,760,780),(840,580,1550,780),(50,810,760,1010),(840,810,1550,1010)]
-    for (heading,text),(x1,y1,x2,y2) in zip(boxes,coords):
-        draw.rounded_rectangle((x1,y1,x2,y2),radius=18,fill=(255,255,255),outline=(240,90,40),width=3)
-        draw.text((x1+18,y1+15),heading,font=section,fill=(11,46,74))
-        y=y1+55
-        for para in str(text or "Por definir").split("\n"):
-            for line in textwrap.wrap(para,width=55) or [""]:
-                draw.text((x1+18,y),line,font=body,fill=(11,46,74)); y+=23
-    footer=f"Madurez: {level} ({score}/100) | Innovación: {innovation}/50 | Bloqueantes: {', '.join(blockers) if blockers else 'Ninguno'}"
-    draw.text((50,1040),footer,font=body,fill=(255,255,255))
-    output=BytesIO(); img.save(output,format="PNG"); output.seek(0)
-    return output
+
+    coords = [
+        (55, 140, 860, 355),
+        (935, 140, 1740, 355),
+        (55, 390, 860, 605),
+        (935, 390, 1740, 605),
+        (55, 640, 860, 855),
+        (935, 640, 1740, 855),
+        (55, 890, 860, 1105),
+        (935, 890, 1740, 1105),
+    ]
+
+    for (title, content), (x1, y1, x2, y2) in zip(boxes, coords):
+        draw.rounded_rectangle(
+            (x1, y1, x2, y2),
+            radius=24,
+            fill=light_box,
+            outline=orange,
+            width=4
+        )
+        draw.text((x1 + 22, y1 + 18), title, fill=dark_text, font=section_font)
+
+        y_text = y1 + 68
+        for line in wrap_text(content, width_chars=48):
+            if y_text > y2 - 34:
+                draw.text((x1 + 22, y_text), "…", fill=dark_text, font=text_font)
+                break
+            draw.text((x1 + 22, y_text), line, fill=dark_text, font=text_font)
+            y_text += 32
+
+    footer_y1, footer_y2 = 1135, 1210
+    draw.rounded_rectangle((55, footer_y1, 1740, footer_y2), radius=20, fill=orange)
+
+    blockers_text = ", ".join(blockers) if blockers else "Ninguno"
+    footer_text = (
+        f"Madurez: {level} ({score}/100) | Innovación: {innovation}/50 | "
+        f"Bloqueantes: {blockers_text}"
+    )
+
+    footer_lines = textwrap.wrap(footer_text, width=115)
+    footer_text_y = footer_y1 + 14
+    for line in footer_lines[:2]:
+        draw.text((75, footer_text_y), line, fill=white, font=footer_font)
+        footer_text_y += 28
+
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
 
 with tabs[9]:
     st.header("10. Resultado del MVP")
