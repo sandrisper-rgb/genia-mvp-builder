@@ -1,2 +1,5 @@
 streamlit
 reportlab
+python-pptx
+pillow
+matplotlib
