@@ -56,15 +56,35 @@ def add_background(path: str) -> None:
         .stTabs [data-baseweb="tab"] {{ color:#fff!important; font-weight:650; }}
         .stTabs [aria-selected="true"] {{ color:#F05A28!important; background:rgba(255,255,255,.62); border-radius:10px 10px 0 0; }}
         .result-box,.maturity-card {{
-            background:rgba(255,255,255,.96)!important;
+            background:rgba(7,38,63,.96)!important;
             border-radius:18px;
             padding:20px;
             margin-top:12px;
-            border:1px solid rgba(11,46,74,.20);
-            box-shadow:0 6px 18px rgba(0,0,0,.12);
+            border:1px solid rgba(255,255,255,.28);
+            box-shadow:0 6px 18px rgba(0,0,0,.18);
         }}
-        .result-box,.result-box *,.maturity-card,.maturity-card * {{
-            color:#0B2E4A!important;
+        .block-container .result-box,
+        .block-container .result-box h1,
+        .block-container .result-box h2,
+        .block-container .result-box h3,
+        .block-container .result-box h4,
+        .block-container .result-box p,
+        .block-container .result-box span,
+        .block-container .result-box strong,
+        .block-container .result-box b,
+        .block-container .result-box li,
+        .block-container .result-box div,
+        .block-container .maturity-card,
+        .block-container .maturity-card h1,
+        .block-container .maturity-card h2,
+        .block-container .maturity-card h3,
+        .block-container .maturity-card p,
+        .block-container .maturity-card span,
+        .block-container .maturity-card strong,
+        .block-container .maturity-card b,
+        .block-container .maturity-card div {{
+            color:#FFFFFF!important;
+            -webkit-text-fill-color:#FFFFFF!important;
         }}
         .result-box {{
             white-space:pre-wrap;
