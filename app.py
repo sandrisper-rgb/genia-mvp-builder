@@ -77,12 +77,13 @@ def add_background(path: str) -> None:
         .stTabs [data-baseweb="tab"] {{ color:#fff!important; font-weight:650; }}
         .stTabs [aria-selected="true"] {{ color:#F05A28!important; background:rgba(255,255,255,.62); border-radius:10px 10px 0 0; }}
         .result-box,.maturity-card {{
-            background:rgba(255,255,255,.97)!important;
-            border-radius:18px;
-            padding:20px;
+            background:rgba(255,255,255,.86)!important;
+            border-radius:22px;
+            padding:22px;
             margin-top:12px;
-            border:1px solid rgba(11,46,74,.22);
-            box-shadow:0 6px 18px rgba(0,0,0,.14);
+            border:1px solid rgba(255,255,255,.28);
+            box-shadow:0 10px 26px rgba(0,0,0,.16);
+            backdrop-filter: blur(6px);
         }}
         .block-container .result-box,
         .block-container .result-box h1,
@@ -527,16 +528,40 @@ def make_pptx(slides):
 def make_scores_chart(scores):
     if not MATPLOTLIB_AVAILABLE:
         return None
-    fig, ax = plt.subplots(figsize=(8,4.5))
-    labels=list(scores.keys()); values=list(scores.values())
-    ax.bar(labels, values)
-    ax.set_ylim(0,10)
+
+    labels = list(scores.keys())
+    values = list(scores.values())
+
+    fig, ax = plt.subplots(figsize=(6.2, 3.5))
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("#F8FBFD")
+
+    bars = ax.bar(labels, values, width=0.58, edgecolor="#0B2E4A", linewidth=0.8)
+
+    ax.set_ylim(0, 10)
     ax.set_ylabel("Puntaje")
-    ax.set_title("Potencial de innovación")
-    ax.tick_params(axis="x", rotation=20)
+    ax.set_title("Potencial de innovación", fontsize=16, pad=12)
+    ax.tick_params(axis="x", rotation=18, labelsize=10)
+    ax.tick_params(axis="y", labelsize=10)
+    ax.grid(axis="y", linestyle="--", alpha=0.25)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    for bar, value in zip(bars, values):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            value + 0.18,
+            str(value),
+            ha="center",
+            va="bottom",
+            fontsize=9
+        )
+
     fig.tight_layout()
-    output=BytesIO(); fig.savefig(output, format="png", dpi=200, bbox_inches="tight")
-    plt.close(fig); output.seek(0)
+    output = BytesIO()
+    fig.savefig(output, format="png", dpi=220, bbox_inches="tight", facecolor=fig.get_facecolor())
+    plt.close(fig)
+    output.seek(0)
     return output
 
 
@@ -709,7 +734,7 @@ with tabs[9]:
 
     pitch_slides = build_pitch_slides(d, score, level, innovation)
     st.subheader("Elevator pitch en 5 diapositivas")
-    st.caption("Una idea central por diapositiva. Presentación sugerida: 3 a 5 minutos.")
+    st.caption("Una idea central por diapositiva. Presentación sugerida: 3 a 5 minutos. Las tarjetas tienen un fondo translúcido para facilitar la lectura.")
     for slide_data in pitch_slides:
         title_html = html.escape(slide_data["title"])
         content_html = "<br>".join("• " + html.escape(item) for item in slide_data["items"])
@@ -744,11 +769,13 @@ with tabs[9]:
     chart_file = make_scores_chart(scores)
     if chart_file:
         chart_bytes = chart_file.getvalue()
-        st.image(
-            chart_bytes,
-            caption="Vista previa de los indicadores del proyecto",
-            use_container_width=True
-        )
+        c_left, c_mid, c_right = st.columns([0.16, 0.68, 0.16])
+        with c_mid:
+            st.image(
+                chart_bytes,
+                caption="Vista previa de los indicadores del proyecto",
+                use_container_width=True
+            )
         st.download_button(
             "📈 Descargar gráfica de indicadores (.png)",
             chart_bytes,
@@ -762,11 +789,13 @@ with tabs[9]:
     canvas_file = make_canvas_png(d, score, level, innovation, blockers)
     if canvas_file:
         canvas_bytes = canvas_file.getvalue()
-        st.image(
-            canvas_bytes,
-            caption="Vista previa del Canvas del MVP",
-            use_container_width=True
-        )
+        c_left, c_mid, c_right = st.columns([0.08, 0.84, 0.08])
+        with c_mid:
+            st.image(
+                canvas_bytes,
+                caption="Vista previa del Canvas del MVP",
+                use_container_width=True
+            )
         st.download_button(
             "🖼️ Descargar Canvas visual (.png)",
             canvas_bytes,
