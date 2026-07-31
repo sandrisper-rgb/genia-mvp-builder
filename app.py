@@ -2,6 +2,7 @@ import base64
 import html
 import os
 import re
+import textwrap
 from datetime import datetime
 from io import BytesIO
 
@@ -15,6 +16,26 @@ try:
     REPORTLAB_AVAILABLE = True
 except Exception:
     REPORTLAB_AVAILABLE = False
+
+try:
+    from pptx import Presentation
+    from pptx.dml.color import RGBColor
+    from pptx.util import Inches, Pt
+    PPTX_AVAILABLE = True
+except Exception:
+    PPTX_AVAILABLE = False
+
+try:
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_AVAILABLE = True
+except Exception:
+    MATPLOTLIB_AVAILABLE = False
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    PIL_AVAILABLE = True
+except Exception:
+    PIL_AVAILABLE = False
 
 st.set_page_config(page_title="GeniA Innovation Builder", page_icon="🧠", layout="wide")
 
@@ -55,21 +76,13 @@ def add_background(path: str) -> None:
         [data-testid="stExpander"] * {{ color:#0B2E4A!important; }}
         .stTabs [data-baseweb="tab"] {{ color:#fff!important; font-weight:650; }}
         .stTabs [aria-selected="true"] {{ color:#F05A28!important; background:rgba(255,255,255,.62); border-radius:10px 10px 0 0; }}
-        .result-box {{
-            background:rgba(7,38,63,.96)!important;
+        .result-box,.maturity-card {{
+            background:rgba(255,255,255,.97)!important;
             border-radius:18px;
             padding:20px;
             margin-top:12px;
-            border:1px solid rgba(255,255,255,.28);
-            box-shadow:0 6px 18px rgba(0,0,0,.18);
-        }}
-        .maturity-card {{
-            background:rgba(255,255,255,.96)!important;
-            border-radius:18px;
-            padding:22px;
-            margin-top:12px;
-            border:1px solid rgba(11,46,74,.20);
-            box-shadow:0 6px 18px rgba(0,0,0,.12);
+            border:1px solid rgba(11,46,74,.22);
+            box-shadow:0 6px 18px rgba(0,0,0,.14);
         }}
         .block-container .result-box,
         .block-container .result-box h1,
@@ -82,10 +95,6 @@ def add_background(path: str) -> None:
         .block-container .result-box b,
         .block-container .result-box li,
         .block-container .result-box div,
-        .block-container .result-box div {{
-            color:#FFFFFF!important;
-            -webkit-text-fill-color:#FFFFFF!important;
-        }}
         .block-container .maturity-card,
         .block-container .maturity-card h1,
         .block-container .maturity-card h2,
@@ -105,7 +114,7 @@ def add_background(path: str) -> None:
             overflow-wrap:anywhere;
         }}
         textarea {{
-            background-color:rgba(255,255,255,.96)!important;
+            background-color:rgba(255,255,255,.98)!important;
             color:#0B2E4A!important;
             -webkit-text-fill-color:#0B2E4A!important;
         }}
@@ -234,7 +243,7 @@ with tabs[2]:
         fuente = st.text_area("Fuente de los datos", height=80)
         disponibilidad = st.selectbox("Disponibilidad real", ["No confirmada","Parcial","Disponible sin depurar","Disponible y depurada","Disponible y lista para análisis"])
         volumen = st.number_input("Número aproximado de registros", min_value=0, max_value=10000000, value=0, step=10)
-        calidad = st.slider("Calidad percibida", 1, 5, 3)
+        calidad = st.select_slider("Calidad percibida", options=[0,1,2,3,4,5], value=0, format_func=lambda x: "No evaluada" if x == 0 else str(x))
     with c2:
         etiqueta = st.text_area("¿Cómo se obtiene la verdad de referencia?", height=80)
         linea_base = st.text_area("Línea base de comparación", placeholder="Revisión manual, regla clínica, promedio histórico o modelo simple.", height=80)
@@ -423,27 +432,155 @@ def make_pdf(d, summary):
     story += [table,Spacer(1,12),Paragraph(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M')}",styles["Normal"])]
     doc.build(story); buffer.seek(0); return buffer
 
+
+def build_pitch_slides(d, score, level, innovation):
+    return [
+        {
+            "title": "1. El problema",
+            "items": [
+                f"Proyecto: {d.get('nombre','') or 'Por definir'}",
+                f"Área: {d.get('area','') or 'Por definir'}",
+                f"Problema: {d.get('problema','') or 'Por definir'}",
+                f"Evidencia: {d.get('evidencia_problema','') or 'Por definir'}",
+                f"Consecuencia: {d.get('consecuencia','') or 'Por definir'}",
+            ],
+        },
+        {
+            "title": "2. Usuario y oportunidad",
+            "items": [
+                f"Usuario principal: {d.get('usuario','') or 'Por definir'}",
+                f"Momento del flujo: {d.get('momento','') or 'Por definir'}",
+                f"Decisión apoyada: {d.get('decision','') or 'Por definir'}",
+                f"Responsable final: {d.get('responsable_final','') or 'Por definir'}",
+                f"Población objetivo: {d.get('poblacion','') or 'Por definir'}",
+            ],
+        },
+        {
+            "title": "3. La solución MVP",
+            "items": [
+                f"Función mínima: {d.get('funcion','') or 'Por definir'}",
+                f"Variable objetivo: {d.get('variable_objetivo','') or 'Por definir'}",
+                f"Entrada: {d.get('entrada_mvp','') or 'Por definir'}",
+                f"Salida: {d.get('salida_visible','') or d.get('salida','') or 'Por definir'}",
+                f"Acción del usuario: {d.get('accion_usuario','') or 'Por definir'}",
+                f"Línea base: {d.get('linea_base','') or 'Por definir'}",
+            ],
+        },
+        {
+            "title": "4. Evidencia, seguridad y métricas",
+            "items": [
+                f"Datos: {', '.join(d.get('datos',[])) or 'Por definir'}",
+                f"Técnica probable: {', '.join(d.get('tecnica',[])) or 'Por definir'}",
+                f"Riesgo principal: {d.get('riesgo','') or 'Por definir'}",
+                f"Mitigación: {d.get('mitigacion','') or 'Por definir'}",
+                f"KPIs: {', '.join(d.get('kpis',[])) or 'Por definir'}",
+                f"Meta: {d.get('meta','') or 'Por definir'}",
+            ],
+        },
+        {
+            "title": "5. Piloto y llamado a la acción",
+            "items": [
+                f"Piloto: {d.get('lugar','') or 'Por definir'} | {d.get('duracion','') or 'Por definir'} | {d.get('casos','')} casos",
+                f"Responsable: {d.get('responsable_piloto','') or 'Por definir'}",
+                f"Escalamiento: {d.get('escala','') or 'Por definir'}",
+                f"Madurez: {level} ({score}/100)",
+                f"Innovación: {innovation}/50",
+                "Siguiente paso: validar, priorizar y preparar el piloto institucional.",
+            ],
+        },
+    ]
+
+
+def make_pptx(slides):
+    if not PPTX_AVAILABLE:
+        return None
+    prs = Presentation()
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
+    for slide_data in slides:
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        fill = slide.background.fill
+        fill.solid()
+        fill.fore_color.rgb = RGBColor(11, 46, 74)
+        title_box = slide.shapes.add_textbox(Inches(.7), Inches(.45), Inches(12), Inches(.8))
+        title_p = title_box.text_frame.paragraphs[0]
+        title_p.text = slide_data["title"]
+        title_p.font.size = Pt(28)
+        title_p.font.bold = True
+        title_p.font.color.rgb = RGBColor(240, 90, 40)
+        body_box = slide.shapes.add_textbox(Inches(.9), Inches(1.45), Inches(11.6), Inches(5.4))
+        tf = body_box.text_frame
+        tf.word_wrap = True
+        for idx, item in enumerate(slide_data["items"]):
+            p = tf.paragraphs[0] if idx == 0 else tf.add_paragraph()
+            p.text = item
+            p.level = 0
+            p.font.size = Pt(18)
+            p.font.color.rgb = RGBColor(255,255,255)
+            p.space_after = Pt(10)
+    output = BytesIO()
+    prs.save(output)
+    output.seek(0)
+    return output
+
+
+def make_scores_chart(scores):
+    if not MATPLOTLIB_AVAILABLE:
+        return None
+    fig, ax = plt.subplots(figsize=(8,4.5))
+    labels=list(scores.keys()); values=list(scores.values())
+    ax.bar(labels, values)
+    ax.set_ylim(0,10)
+    ax.set_ylabel("Puntaje")
+    ax.set_title("Potencial de innovación")
+    ax.tick_params(axis="x", rotation=20)
+    fig.tight_layout()
+    output=BytesIO(); fig.savefig(output, format="png", dpi=200, bbox_inches="tight")
+    plt.close(fig); output.seek(0)
+    return output
+
+
+def make_canvas_png(d, score, level, innovation, blockers):
+    if not PIL_AVAILABLE:
+        return None
+    W,H=1600,1100
+    img=Image.new("RGB",(W,H),(11,46,74)); draw=ImageDraw.Draw(img)
+    try:
+        title=ImageFont.truetype("DejaVuSans-Bold.ttf",40)
+        section=ImageFont.truetype("DejaVuSans-Bold.ttf",25)
+        body=ImageFont.truetype("DejaVuSans.ttf",18)
+    except Exception:
+        title=section=body=ImageFont.load_default()
+    draw.text((50,30),"GeniA Innovation Builder — MVP Canvas",font=title,fill=(255,255,255))
+    boxes=[
+        ("Problema",d.get("problema","")),
+        ("Usuario y decisión",f"{d.get('usuario','')}\n{d.get('decision','')}"),
+        ("Variable objetivo",d.get("variable_objetivo","")),
+        ("Datos y línea base",f"{', '.join(d.get('datos',[]))}\nLínea base: {d.get('linea_base','')}"),
+        ("MVP",f"{d.get('funcion','')}\nSalida: {d.get('salida_visible','')}"),
+        ("Riesgo y mitigación",f"{d.get('riesgo','')}\n{d.get('mitigacion','')}"),
+        ("KPIs y meta",f"{', '.join(d.get('kpis',[]))}\n{d.get('meta','')}"),
+        ("Piloto y escalamiento",f"{d.get('lugar','')} | {d.get('duracion','')} | {d.get('casos','')} casos\n{d.get('escala','')}"),
+    ]
+    coords=[(50,120,760,320),(840,120,1550,320),(50,350,760,550),(840,350,1550,550),(50,580,760,780),(840,580,1550,780),(50,810,760,1010),(840,810,1550,1010)]
+    for (heading,text),(x1,y1,x2,y2) in zip(boxes,coords):
+        draw.rounded_rectangle((x1,y1,x2,y2),radius=18,fill=(255,255,255),outline=(240,90,40),width=3)
+        draw.text((x1+18,y1+15),heading,font=section,fill=(11,46,74))
+        y=y1+55
+        for para in str(text or "Por definir").split("\n"):
+            for line in textwrap.wrap(para,width=55) or [""]:
+                draw.text((x1+18,y),line,font=body,fill=(11,46,74)); y+=23
+    footer=f"Madurez: {level} ({score}/100) | Innovación: {innovation}/50 | Bloqueantes: {', '.join(blockers) if blockers else 'Ninguno'}"
+    draw.text((50,1040),footer,font=body,fill=(255,255,255))
+    output=BytesIO(); img.save(output,format="PNG"); output.seek(0)
+    return output
+
 with tabs[9]:
     st.header("10. Resultado del MVP")
     d=st.session_state.data; score=maturity_score(d); level, interpretation, next_step, blockers=maturity_level(score,d)
     scores=innovation_score(d); innovation=sum(scores.values())
     c1,c2,c3,c4=st.columns(4); c1.metric("Madurez",f"{score}/100"); c2.metric("Innovación",f"{innovation}/50"); c3.metric("KPIs",len(d.get("kpis",[]))); c4.metric("Validaciones",len(d.get("validaciones",[])))
-    st.markdown(
-        f"""
-        <div class="maturity-card">
-            <h2 style="color:#0B2E4A !important; -webkit-text-fill-color:#0B2E4A !important;">{level}</h2>
-            <p style="color:#0B2E4A !important; -webkit-text-fill-color:#0B2E4A !important;">
-                <strong style="color:#0B2E4A !important; -webkit-text-fill-color:#0B2E4A !important;">Interpretación:</strong>
-                {interpretation}
-            </p>
-            <p style="color:#0B2E4A !important; -webkit-text-fill-color:#0B2E4A !important;">
-                <strong style="color:#0B2E4A !important; -webkit-text-fill-color:#0B2E4A !important;">Próximo paso:</strong>
-                {next_step}
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown(f'<div class="maturity-card"><h2>{level}</h2><p><b>Interpretación:</b> {interpretation}</p><p><b>Próximo paso:</b> {next_step}</p></div>',unsafe_allow_html=True)
     if blockers: st.warning("Elementos bloqueantes: " + ", ".join(blockers))
     st.subheader("Potencial de innovación")
     for item,value in scores.items(): st.progress(value/10,text=f"{item}: {value}/10")
@@ -465,94 +602,47 @@ with tabs[9]:
         mime="text/markdown"
     )
 
-    pitch_slides = [
-        {
-            "title": "1. El problema",
-            "content": f"""**Reto identificado**  
-{d.get('problema','') or 'Por definir'}
-
-**Evidencia del problema**  
-{d.get('evidencia_problema','') or 'Por definir'}
-
-**Consecuencia de no actuar**  
-{d.get('consecuencia','') or 'Por definir'}"""
-        },
-        {
-            "title": "2. Usuario y oportunidad",
-            "content": f"""**Usuario principal**  
-{d.get('usuario','') or 'Por definir'}
-
-**Decisión que se busca apoyar**  
-{d.get('decision','') or 'Por definir'}
-
-**Momento del flujo**  
-{d.get('momento','') or 'Por definir'}"""
-        },
-        {
-            "title": "3. La solución MVP",
-            "content": f"""**Función mínima**  
-{d.get('funcion','') or 'Por definir'}
-
-**Variable objetivo**  
-{d.get('variable_objetivo','') or 'Por definir'}
-
-**Salida para el usuario**  
-{d.get('salida_visible','') or d.get('salida','') or 'Por definir'}
-
-**Lo que NO hará**  
-{d.get('no_hara','') or 'Por definir'}"""
-        },
-        {
-            "title": "4. Evidencia, seguridad y métricas",
-            "content": f"""**Datos principales**  
-{', '.join(d.get('datos',[])) or 'Por definir'}
-
-**Línea base**  
-{d.get('linea_base','') or 'Por definir'}
-
-**KPIs**  
-{', '.join(d.get('kpis',[])) or 'Por definir'}
-
-**Riesgo y mitigación**  
-{d.get('riesgo','') or 'Por definir'} → {d.get('mitigacion','') or 'Por definir'}"""
-        },
-        {
-            "title": "5. Piloto y llamado a la acción",
-            "content": f"""**Piloto propuesto**  
-{d.get('lugar','') or 'Por definir'} durante {d.get('duracion','') or 'Por definir'}, con {d.get('casos','') or '0'} casos y {d.get('usuarios','') or '0'} usuarios.
-
-**Criterio para avanzar**  
-{d.get('criterio_avance','') or 'Por definir'}
-
-**Escalamiento**  
-{d.get('escala','') or 'Por definir'}
-
-**Solicitud al comité / audiencia**  
-Aprobar la validación inicial y el piloto controlado del MVP."""
-        }
-    ]
-
+    pitch_slides = build_pitch_slides(d, score, level, innovation)
     st.subheader("Elevator pitch en 5 diapositivas")
     st.caption("Una idea central por diapositiva. Presentación sugerida: 3 a 5 minutos.")
-
-    for slide in pitch_slides:
-        slide_title = html.escape(slide["title"])
-        slide_content = html.escape(slide["content"])
+    for slide_data in pitch_slides:
+        title_html = html.escape(slide_data["title"])
+        content_html = "<br>".join("• " + html.escape(item) for item in slide_data["items"])
         st.markdown(
-            f"<div class='result-box'><h3>{slide_title}</h3><div>{slide_content}</div></div>",
+            f"<div class='result-box'><h3>{title_html}</h3><div>{content_html}</div></div>",
             unsafe_allow_html=True
         )
 
-    pitch = "# Elevator pitch en 5 diapositivas\n\n" + "\n\n---\n\n".join(
-        [f"## {slide['title']}\n\n{slide['content']}" for slide in pitch_slides]
+    pitch_md = "# Elevator pitch en 5 diapositivas\n\n" + "\n\n---\n\n".join(
+        f"## {slide_data['title']}\n\n" + "\n".join(f"- {item}" for item in slide_data["items"])
+        for slide_data in pitch_slides
     )
-
     st.download_button(
-        "🎤 Descargar elevator pitch de 5 diapositivas",
-        pitch.encode("utf-8"),
+        "🎤 Descargar elevator pitch en Markdown",
+        pitch_md.encode("utf-8"),
         file_name=f"elevator_pitch_5_slides_{filename}.md",
         mime="text/markdown"
     )
+
+    pptx_file = make_pptx(pitch_slides)
+    if pptx_file:
+        st.download_button(
+            "📊 Descargar elevator pitch en PowerPoint (.pptx)",
+            pptx_file,
+            file_name=f"pitch_5_slides_{filename}.pptx",
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        )
+    else:
+        st.caption("Para exportar PowerPoint instala python-pptx.")
+
+    chart_file = make_scores_chart(scores)
+    if chart_file:
+        st.download_button("📈 Descargar figura de innovación (.png)", chart_file, file_name=f"innovacion_{filename}.png", mime="image/png")
+
+    canvas_file = make_canvas_png(d, score, level, innovation, blockers)
+    if canvas_file:
+        st.download_button("🖼️ Descargar Canvas visual (.png)", canvas_file, file_name=f"canvas_mvp_{filename}.png", mime="image/png")
+
     pdf=make_pdf(d,summary)
     if pdf: st.download_button("📄 Descargar Canvas en PDF",pdf,file_name=f"genia_mvp_canvas_{filename}.pdf",mime="application/pdf")
     else: st.caption("Para exportar PDF instala reportlab: pip install reportlab")
@@ -567,5 +657,7 @@ st.sidebar.markdown("""
 
 **Principio:** el algoritmo no es el MVP. El MVP integra problema, usuario, datos, salida, acción, validación y seguridad.
 """)
+st.sidebar.markdown("**Dependencias:** streamlit, reportlab, python-pptx, pillow y matplotlib")
+
 if st.sidebar.button("Reiniciar formulario"):
     st.session_state.data={}; st.rerun()
