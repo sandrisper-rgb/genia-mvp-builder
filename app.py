@@ -438,34 +438,92 @@ with tabs[9]:
         mime="text/markdown"
     )
 
-    pitch=f"""# Pitch de 3 minutos
+    pitch_slides = [
+        {
+            "title": "1. El problema",
+            "content": f"""**Reto identificado**  
+{d.get('problema','') or 'Por definir'}
 
-Somos el equipo **{d.get('nombre','')}**.
+**Evidencia del problema**  
+{d.get('evidencia_problema','') or 'Por definir'}
 
-El problema es **{d.get('problema','')}**.
+**Consecuencia de no actuar**  
+{d.get('consecuencia','') or 'Por definir'}"""
+        },
+        {
+            "title": "2. Usuario y oportunidad",
+            "content": f"""**Usuario principal**  
+{d.get('usuario','') or 'Por definir'}
 
-Nuestro usuario es **{d.get('usuario','')}** y buscamos apoyar **{d.get('decision','')}**.
+**Decisión que se busca apoyar**  
+{d.get('decision','') or 'Por definir'}
 
-El MVP hará **{d.get('funcion','')}** y se comparará contra **{d.get('linea_base','')}**.
+**Momento del flujo**  
+{d.get('momento','') or 'Por definir'}"""
+        },
+        {
+            "title": "3. La solución MVP",
+            "content": f"""**Función mínima**  
+{d.get('funcion','') or 'Por definir'}
 
-Mediremos **{', '.join(d.get('kpis',[]))}**.
+**Variable objetivo**  
+{d.get('variable_objetivo','') or 'Por definir'}
 
-El principal riesgo es **{d.get('riesgo','')}**, mitigado mediante **{d.get('mitigacion','')}**.
+**Salida para el usuario**  
+{d.get('salida_visible','') or d.get('salida','') or 'Por definir'}
 
-Proponemos un piloto en **{d.get('lugar','')}** durante **{d.get('duracion','')}**.
-"""
+**Lo que NO hará**  
+{d.get('no_hara','') or 'Por definir'}"""
+        },
+        {
+            "title": "4. Evidencia, seguridad y métricas",
+            "content": f"""**Datos principales**  
+{', '.join(d.get('datos',[])) or 'Por definir'}
 
-    st.subheader("Pitch de 3 minutos")
-    pitch_html = html.escape(pitch)
-    st.markdown(
-        f'<div class="result-box">{pitch_html}</div>',
-        unsafe_allow_html=True
+**Línea base**  
+{d.get('linea_base','') or 'Por definir'}
+
+**KPIs**  
+{', '.join(d.get('kpis',[])) or 'Por definir'}
+
+**Riesgo y mitigación**  
+{d.get('riesgo','') or 'Por definir'} → {d.get('mitigacion','') or 'Por definir'}"""
+        },
+        {
+            "title": "5. Piloto y llamado a la acción",
+            "content": f"""**Piloto propuesto**  
+{d.get('lugar','') or 'Por definir'} durante {d.get('duracion','') or 'Por definir'}, con {d.get('casos','') or '0'} casos y {d.get('usuarios','') or '0'} usuarios.
+
+**Criterio para avanzar**  
+{d.get('criterio_avance','') or 'Por definir'}
+
+**Escalamiento**  
+{d.get('escala','') or 'Por definir'}
+
+**Solicitud al comité / audiencia**  
+Aprobar la validación inicial y el piloto controlado del MVP."""
+        }
+    ]
+
+    st.subheader("Elevator pitch en 5 diapositivas")
+    st.caption("Una idea central por diapositiva. Presentación sugerida: 3 a 5 minutos.")
+
+    for slide in pitch_slides:
+        slide_title = html.escape(slide["title"])
+        slide_content = html.escape(slide["content"])
+        st.markdown(
+            f"<div class='result-box'><h3>{slide_title}</h3><div>{slide_content}</div></div>",
+            unsafe_allow_html=True
+        )
+
+    pitch = "# Elevator pitch en 5 diapositivas\n\n" + "\n\n---\n\n".join(
+        [f"## {slide['title']}\n\n{slide['content']}" for slide in pitch_slides]
     )
 
     st.download_button(
-        "🎤 Descargar pitch",
+        "🎤 Descargar elevator pitch de 5 diapositivas",
         pitch.encode("utf-8"),
-        file_name=f"pitch_{filename}.md",
+        file_name=f"elevator_pitch_5_slides_{filename}.md",
         mime="text/markdown"
     )
     pdf=make_pdf(d,summary)
@@ -478,7 +536,7 @@ st.sidebar.markdown("""
 2. Revisa madurez y bloqueantes.  
 3. Ajusta su propuesta.  
 4. Descarga el Canvas.  
-5. Presenta un pitch de 3 minutos.
+5. Presenta un elevator pitch de 5 diapositivas.
 
 **Principio:** el algoritmo no es el MVP. El MVP integra problema, usuario, datos, salida, acción, validación y seguridad.
 """)
