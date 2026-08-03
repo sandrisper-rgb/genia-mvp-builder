@@ -2,6 +2,9 @@ import base64
 import html
 import os
 import re
+import sqlite3
+import json
+import uuid
 import textwrap
 from datetime import datetime
 from io import BytesIO
@@ -38,6 +41,62 @@ except Exception:
     PIL_AVAILABLE = False
 
 st.set_page_config(page_title="GeniA Innovation Builder", page_icon="🧠", layout="wide")
+
+
+# ============================================================
+# PERSISTENCIA MULTIUSUARIO (SQLite)
+# Cada navegador mantiene su propia sesión de Streamlit y cada
+# clic en Guardar crea un registro independiente en la base.
+# ============================================================
+DB_PATH = os.getenv("GENIA_DB_PATH", "genia_proyectos.db")
+
+
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=30000;")
+    return conn
+
+
+def init_database():
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS proyectos_mvp (
+                id TEXT PRIMARY KEY,
+                nombre_usuario TEXT NOT NULL,
+                nombre_proyecto TEXT,
+                datos_json TEXT NOT NULL,
+                fecha_guardado TEXT NOT NULL
+            )
+            """
+        )
+        conn.commit()
+
+
+def guardar_proyecto(nombre_usuario, datos):
+    registro_id = str(uuid.uuid4())
+    fecha = datetime.now().isoformat(timespec="seconds")
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO proyectos_mvp
+                (id, nombre_usuario, nombre_proyecto, datos_json, fecha_guardado)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                registro_id,
+                nombre_usuario.strip(),
+                str(datos.get("nombre", "")).strip(),
+                json.dumps(datos, ensure_ascii=False),
+                fecha,
+            ),
+        )
+        conn.commit()
+    return registro_id, fecha
+
+
+init_database()
 
 
 def image_to_base64(path: str) -> str:
@@ -180,6 +239,12 @@ with st.expander("¿Qué es un MVP de IA en salud?", expanded=True):
 
 if "data" not in st.session_state:
     st.session_state.data = {}
+
+if "usuario_registro" not in st.session_state:
+    st.session_state.usuario_registro = ""
+
+if "ultimo_guardado" not in st.session_state:
+    st.session_state.ultimo_guardado = None
 
 def save(key, value):
     st.session_state.data[key] = value
@@ -820,6 +885,37 @@ st.sidebar.markdown("""
 **Principio:** el algoritmo no es el MVP. El MVP integra problema, usuario, datos, salida, acción, validación y seguridad.
 """)
 st.sidebar.markdown("**Dependencias:** streamlit, reportlab, python-pptx, pillow y matplotlib")
+
+st.sidebar.divider()
+st.sidebar.subheader("Guardar proyecto")
+st.sidebar.caption("Cada usuario y dispositivo guarda un registro independiente.")
+nombre_usuario_guardado = st.sidebar.text_input(
+    "Nombre del participante / equipo",
+    value=st.session_state.usuario_registro,
+)
+st.session_state.usuario_registro = nombre_usuario_guardado
+
+if st.sidebar.button("💾 Guardar proyecto", use_container_width=True, type="primary"):
+    nombre_usuario = st.session_state.usuario_registro.strip()
+    if not nombre_usuario:
+        st.sidebar.error("Escribe el nombre del participante o equipo antes de guardar.")
+    else:
+        try:
+            registro_id, fecha = guardar_proyecto(nombre_usuario, st.session_state.data)
+            st.session_state.ultimo_guardado = {
+                "id": registro_id,
+                "fecha": fecha,
+                "usuario": nombre_usuario,
+            }
+            st.sidebar.success(f"Proyecto guardado correctamente: {fecha}")
+        except sqlite3.Error as exc:
+            st.sidebar.error(f"No fue posible guardar el proyecto: {exc}")
+
+if st.session_state.ultimo_guardado:
+    st.sidebar.caption(
+        f"Último registro: {st.session_state.ultimo_guardado['usuario']} · "
+        f"{st.session_state.ultimo_guardado['fecha']}"
+    )
 
 if st.sidebar.button("Reiniciar formulario"):
     st.session_state.data={}; st.rerun()
