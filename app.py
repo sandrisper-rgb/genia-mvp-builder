@@ -289,7 +289,7 @@ with tabs[1]:
 
 with tabs[3]:
     st.header("4. Variable objetivo y alcance")
-    tarea_ia = st.selectbox("Tarea principal", ["Predecir un evento","Clasificar","Priorizar","Extraer información","Resumir","Pronosticar demanda","Detectar una anomalía","Recomendar bajo supervisión","Otra"])
+    tarea_ia = st.selectbox("Tarea principal", ["Predecir un evento","Clasificar","Priorizar","Extraer información","PLN","Pronosticar demanda","Detectar una anomalía","Recomendar bajo supervisión","Otra"])
     c1, c2 = st.columns(2)
     with c1:
         variable_objetivo = st.text_area("Variable objetivo o resultado principal", placeholder="Ejemplo: reingreso no programado dentro de 30 días.", height=90)
