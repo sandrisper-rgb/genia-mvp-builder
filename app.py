@@ -293,7 +293,7 @@ with tabs[3]:
     c1, c2 = st.columns(2)
     with c1:
         variable_objetivo = st.text_area("Variable objetivo o resultado principal", placeholder="Ejemplo: reingreso no programado dentro de 30 días.", height=90)
-        definicion_positiva = st.text_area("Definición exacta del resultado correcto", height=90)
+        definicion_positiva = st.text_area("Métricas de rendimiento", height=90)
         unidad_analisis = st.selectbox("Unidad de análisis", ["Paciente","Consulta","Hospitalización","Imagen","Documento","Medicamento","Día","Servicio","Otra"])
     with c2:
         horizonte = st.text_input("Horizonte temporal", placeholder="24 horas, 7 días, 30 días")
