@@ -311,7 +311,7 @@ with tabs[2]:
         volumen = st.number_input("Número aproximado de registros", min_value=0, max_value=10000000, value=0, step=10)
         calidad = st.select_slider("Calidad percibida", options=[0,1,2,3,4,5], value=0, format_func=lambda x: "No evaluada" if x == 0 else str(x))
     with c2:
-        etiqueta = st.text_area("¿Cómo se obtiene la verdad de referencia?", height=80)
+        etiqueta = st.text_area("Beneficios Esperados", height=80)
         linea_base = st.text_area("Línea base de comparación", placeholder="Revisión manual, regla clínica, promedio histórico o modelo simple.", height=80)
         tecnica = st.multiselect("Técnica probable", ["Reglas clínicas","Regresión logística","Machine Learning clásico","Gradient Boosting","Deep Learning","Computer Vision","NLP","IA generativa","Series temporales","Reglas + IA","No definido aún"])
     for k, v in {"datos":datos,"fuente":fuente,"disponibilidad":disponibilidad,"volumen":volumen,"calidad":calidad,"etiqueta":etiqueta,"linea_base":linea_base,"tecnica":tecnica}.items(): save(k,v)
